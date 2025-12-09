@@ -4,45 +4,42 @@
 
 ### Q1. Frontend: React.js (Vite)
 * **Choice:** React.js initialized with Vite.
-* **Justification:** React's component-based architecture allows for a modular UI. I specifically chose **Vite** over Create-React-App for its superior build performance and lighter footprint.
+* **Justification:** React's component-based architecture allows for a modular and reusable UI. I specifically chose **Vite** over Create-React-App for its superior build performance and lighter development footprint. The application uses modern CSS (Flexbox/Grid) for a responsive layout without relying on heavy external UI libraries.
 
 ### Q2. Backend: Java Spring Boot
-* **Choice:** Spring Boot 3.x (Java 17).
-* **Justification:** Spring Boot is the enterprise standard for building robust, scalable REST APIs. It provides:
-    * **Strict Type Safety:** Critical for healthcare data.
-    * **Embedded Server:** Easy to run locally.
+* **Choice:** Spring Boot 3.4 (Java 17).
+* **Justification:** Spring Boot is the enterprise standard for building robust, scalable REST APIs. It was chosen for:
+    * **Strict Type Safety:** Critical for healthcare data to prevent runtime type errors.
     * **Dependency Injection:** Ensures code is testable and loosely coupled.
+    * **Embedded Server (Tomcat):** Makes the application easy to run locally without complex server configuration.
 
 ### Q3. Database: H2 Database
-* **Choice:** H2 (In-Memory / File-based)
-* **Justification:** The prompt allows for "SQLite, PostgreSQL, or similar." I chose H2 because it requires zero installation. It runs entirely within the JVM.
+* **Choice:** H2 (In-Memory / File-based Persistence).
+* **Justification:** The assignment allows for "SQLite or similar." I chose H2 because it mimics the behavior of enterprise SQL databases (like PostgreSQL) but requires **zero installation** for the reviewer. It runs entirely within the JVM, ensuring the code works on any machine immediately.
 
 ### Q4. Scaling to 1,000 Users
-To scale to 1,000+ users:
-1.  **Storage:** Move from local disk (`uploads/`) to Cloud Storage (AWS S3).
-2.  **Database:** Migrate H2 to PostgreSQL for better concurrency.
-3.  **Security:** Implement Spring Security with OAuth2/JWT.
+To scale from this local prototype to 1,000+ concurrent users, I would implement the following changes:
+1.  **Storage:** Migrate from local disk storage (`uploads/`) to Cloud Object Storage (e.g., AWS S3 or Azure Blob) to handle infinite scale and provide redundancy.
+2.  **Database:** Migrate from H2 to a managed PostgreSQL instance to handle higher concurrency and ensure data integrity.
+3.  **Security:** Implement Spring Security with OAuth2/OIDC (e.g., Auth0 or Keycloak) to ensure users can only access their own documents.
+4.  **Caching:** Implement Redis to cache file metadata for frequently accessed documents.
 
 ## 2. Architecture Overview
-[Client (React)] <-> [REST API (Spring Boot)] <-> [Service] <-> [Repository] <-> [Database (H2)]
-                                                      |
-                                                      v
-                                              [File System (/uploads)]
 
-## 3. API Specification
+### High-Level Diagram
+The system follows a standard 3-Tier Web Architecture.
 
-| Endpoint | Method | Description |
-| :--- | :--- | :--- |
-| `/api/documents/upload` | `POST` | Upload PDF (FormData: file) |
-| `/api/documents` | `GET` | List all files |
-| `/api/documents/{id}` | `GET` | Download file |
-| `/api/documents/{id}` | `DELETE` | Delete file |
-
-## 4. Data Flow Description (Q5)
-1.  **Upload:** User sends file -> Spring validates PDF -> Saves to `uploads/` folder -> Saves metadata to H2 DB.
-2.  **Download:** User requests ID -> Spring finds path in DB -> Streams file from disk to browser.
-
-## 5. Assumptions (Q6)
-1.  **Single Tenant:** No login required (as per prompt).
-2.  **File Integrity:** Local file system has write permissions.
-3.  **Validation:** Only PDF MIME types are allowed.
+```mermaid
+graph TD
+    User[User / Browser] -- HTTPS Request --> Frontend[React Frontend]
+    Frontend -- REST API (Axios) --> Backend[Spring Boot Backend]
+    
+    subgraph "Server Layer"
+        Backend -- Validation & Logic --> Service[DocumentService]
+    end
+    
+    subgraph "Data Persistence"
+        Service -- Save Metadata (JDBC) --> DB[(H2 Database)]
+        Service -- Stream Bytes (I/O) --> FS[Local File System /uploads]
+    end
+3. API SpecificationEndpointMethodDescriptionRequest BodyResponse/api/documents/uploadPOSTUpload PDFFormData (key: file){ "message": "Success", "id": 1 }/api/documentsGETList all filesNone[{ "id": 1, "filename": "report.pdf", "size": 1024 }]/api/documents/{id}GETDownload fileNoneBinary File Stream (application/pdf)/api/documents/{id}DELETEDelete fileNone{ "message": "Deleted successfully" }4. Data Flow Description (Q5)Scenario A: File UploadSelection: User selects a file via the React UI. Frontend validates the .pdf extension.Transmission: React sends a POST request with MultipartFile data to the Backend.Validation: Spring Boot Controller intercepts the request. The Service layer validates the MIME type is strictly application/pdf.Storage: The Service generates a UUID-based unique filename to prevent overwrites and streams the file bytes to the local uploads/ directory.Metadata: The Service saves the original filename, file path, size, and timestamp to the H2 Database.Confirmation: Server returns 200 OK, and the Frontend refreshes the list.Scenario B: File DownloadRequest: User clicks "Download". Frontend requests /api/documents/{id}.Lookup: Backend searches the Database for the file path associated with that ID.Streaming: The file is read from the disk and wrapped in a Resource object.Delivery: The response header Content-Disposition: attachment is set with the original filename, triggering a browser download dialog.5. Assumptions (Q6)Single Tenant: The system assumes a single-user environment as per the prompt; no authentication middleware is implemented.File Integrity: It is assumed the host machine has write permissions for the application directory.PDF Validation: We assume checking the MIME type application/pdf is sufficient for this scope, without deep binary content inspection.
