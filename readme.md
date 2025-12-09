@@ -1,4 +1,3 @@
-```markdown
 # Patient Document Portal
 
 A Full Stack application for uploading, managing, and retrieving patient medical records. Built with **Java Spring Boot** and **React**.
@@ -35,37 +34,40 @@ Ensure you have the following installed:
 ```bash
 cd backend
 ./mvnw spring-boot:run
-The server will start on: http://localhost:8080
+```
 
-Note: Folders named uploads and data will be created automatically in the backend directory.
+* The server will start on: `http://localhost:8080`
+* **Note:** Folders named `uploads` and `data` will be created automatically in the backend directory.
 
-Step 2: Start the Frontend Application
-Open a new terminal window and navigate to the frontend folder.
+### Step 2: Start the Frontend Application
+1.  Open a **new** terminal window and navigate to the `frontend` folder.
+2.  Install dependencies and start the dev server:
 
-Install dependencies and start the dev server:
-
-Bash
-
+```bash
 cd frontend
 npm install
 npm run dev
-The application will be available at: http://localhost:5173 (or the port shown in your terminal).
+```
 
-🔌 API Usage (Examples)
-You can test the API directly using curl if you prefer not to use the UI.
+* The application will be available at: `http://localhost:5173` (or the port shown in your terminal).
 
-1. Upload a File
+---
 
-Bash
+## 🔌 API Usage (Examples)
 
+You can test the API directly using `curl` if you prefer not to use the UI.
+
+**1. Upload a File**
+```bash
 curl -F "file=@/path/to/your/test.pdf" http://localhost:8080/api/documents/upload
-2. List All Documents
+```
 
-Bash
-
+**2. List All Documents**
+```bash
 curl http://localhost:8080/api/documents
-3. Delete a Document
+```
 
-Bash
-
+**3. Delete a Document**
+```bash
 curl -X DELETE http://localhost:8080/api/documents/1
+```

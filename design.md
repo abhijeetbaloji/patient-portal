@@ -43,4 +43,34 @@ graph TD
         Service -- Save Metadata (JDBC) --> DB[(H2 Database)]
         Service -- Stream Bytes (I/O) --> FS[Local File System /uploads]
     end
-3. API SpecificationEndpointMethodDescriptionRequest BodyResponse/api/documents/uploadPOSTUpload PDFFormData (key: file){ "message": "Success", "id": 1 }/api/documentsGETList all filesNone[{ "id": 1, "filename": "report.pdf", "size": 1024 }]/api/documents/{id}GETDownload fileNoneBinary File Stream (application/pdf)/api/documents/{id}DELETEDelete fileNone{ "message": "Deleted successfully" }4. Data Flow Description (Q5)Scenario A: File UploadSelection: User selects a file via the React UI. Frontend validates the .pdf extension.Transmission: React sends a POST request with MultipartFile data to the Backend.Validation: Spring Boot Controller intercepts the request. The Service layer validates the MIME type is strictly application/pdf.Storage: The Service generates a UUID-based unique filename to prevent overwrites and streams the file bytes to the local uploads/ directory.Metadata: The Service saves the original filename, file path, size, and timestamp to the H2 Database.Confirmation: Server returns 200 OK, and the Frontend refreshes the list.Scenario B: File DownloadRequest: User clicks "Download". Frontend requests /api/documents/{id}.Lookup: Backend searches the Database for the file path associated with that ID.Streaming: The file is read from the disk and wrapped in a Resource object.Delivery: The response header Content-Disposition: attachment is set with the original filename, triggering a browser download dialog.5. Assumptions (Q6)Single Tenant: The system assumes a single-user environment as per the prompt; no authentication middleware is implemented.File Integrity: It is assumed the host machine has write permissions for the application directory (uploads/).PDF Validation: We assume checking the MIME type application/pdf is sufficient for this scope, without deep binary content inspection.
+```
+
+## 3. API Specification
+
+| Endpoint | Method | Description | Request Body | Response |
+| :--- | :--- | :--- | :--- | :--- |
+| `/api/documents/upload` | `POST` | Upload PDF | `FormData` (key: `file`) | `{ "message": "Success", "id": 1 }` |
+| `/api/documents` | `GET` | List all files | None | `[{ "id": 1, "filename": "report.pdf", "size": 1024 }]` |
+| `/api/documents/{id}` | `GET` | Download file | None | Binary File Stream (`application/pdf`) |
+| `/api/documents/{id}` | `DELETE` | Delete file | None | `{ "message": "Deleted successfully" }` |
+
+## 4. Data Flow Description (Q5)
+
+### Scenario A: File Upload
+1.  **Selection:** User selects a file via the React UI. Frontend validates the `.pdf` extension.
+2.  **Transmission:** React sends a `POST` request with `MultipartFile` data to the Backend.
+3.  **Validation:** Spring Boot Controller intercepts the request. The Service layer validates the MIME type is strictly `application/pdf`.
+4.  **Storage:** The Service generates a UUID-based unique filename to prevent overwrites and streams the file bytes to the local `uploads/` directory.
+5.  **Metadata:** The Service saves the original filename, file path, size, and timestamp to the H2 Database.
+6.  **Confirmation:** Server returns `200 OK`, and the Frontend refreshes the list.
+
+### Scenario B: File Download
+1.  **Request:** User clicks "Download". Frontend requests `/api/documents/{id}`.
+2.  **Lookup:** Backend searches the Database for the file path associated with that ID.
+3.  **Streaming:** The file is read from the disk and wrapped in a `Resource` object.
+4.  **Delivery:** The response header `Content-Disposition: attachment` is set with the original filename, triggering a browser download dialog.
+
+## 5. Assumptions (Q6)
+1.  **Single Tenant:** The system assumes a single-user environment as per the prompt; no authentication middleware is implemented.
+2.  **File Integrity:** It is assumed the host machine has write permissions for the application directory (`uploads/`).
+3.  **PDF Validation:** We assume checking the MIME type `application/pdf` is sufficient for this scope, without deep binary content inspection.
